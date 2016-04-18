@@ -14,6 +14,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool enableVarJumpHeight;
     [SerializeField] private float minJumpHeight = 2f;
 
+    [Header("Wall Jumping")]
+    [SerializeField] private bool enableWallJump;
+    [SerializeField] private float wallSlideSpeed = 3f;
+    [SerializeField] private float wallStickDuration = 0.25f;
+    [SerializeField] private float accelerationWallJump = 0.2f;
+    [SerializeField] private Vector2 wallJumpClimb;
+    [SerializeField] private Vector2 wallJumpOff;
+    [SerializeField] private Vector2 wallJumpLeap;
+
     // Utility
     private Vector2 input;
     private CharacterController2D characterController;
@@ -22,8 +31,15 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity;
     private float gravity;
     private float horizontalSmoothing;
+
+    // Jumping
     private float jumpVelocity;
     private float minJumpVelocity;
+
+    // Wall Jumping
+    private bool wallJumping;
+    private bool wallSliding;
+    private float wallUnstickTime;
 
     void Start()
     {
@@ -50,13 +66,19 @@ public class PlayerController : MonoBehaviour
         // smoothly accelerate towards the target
         velocity.x = Mathf.SmoothDamp(velocity.x, horizontalVel, ref horizontalSmoothing, acceleration);
 
+        // wall jumping
+        if (enableWallJump)
+        {
+            WallJump();
+        }
+
         // reset vertical velocity on vertical collisions
         if (characterController.CollisionState.below || characterController.CollisionState.above)
         {
             velocity.y = 0;
         }
 
-        // jumping
+        // regular jumping
         Jump();
 
         // apply gravity
@@ -68,7 +90,11 @@ public class PlayerController : MonoBehaviour
 
     private float GetAcceleration()
     {
-        if (characterController.CollisionState.below)
+        if (wallJumping)
+        {
+            return accelerationWallJump;
+        }
+        else if (characterController.CollisionState.below)
         {
             return accelerationGrounded;
         }
@@ -91,6 +117,82 @@ public class PlayerController : MonoBehaviour
             if (velocity.y > minJumpVelocity)
             {
                 velocity.y = minJumpVelocity;
+            }
+        }
+    }
+
+    private void WallJump()
+    {
+        int wallDir = (characterController.CollisionState.left) ? -1 : 1;
+
+        // reset wallsliding status every update
+        wallSliding = false;
+
+        // reset walljumping status on any collision
+        if (characterController.CollisionState.IsColliding())
+        {
+            wallJumping = false;
+        }
+
+        // sliding down along an horizontal wall
+        if ((characterController.CollisionState.left || characterController.CollisionState.right) && 
+            !characterController.CollisionState.below && 
+            velocity.y < 0f)
+        {
+            wallSliding = true;
+
+            // clamp vertical velocity
+            if (velocity.y < -wallSlideSpeed)
+            {
+                velocity.y = -wallSlideSpeed;
+            }
+
+            // when sliding, player is stuck for a brief period of time to facilitate walljumping
+            if (wallUnstickTime > 0f)
+            {
+                velocity.x = 0f;
+                horizontalSmoothing = 0f;
+
+                if (input.x != wallDir && input.x != 0)
+                {
+                    wallUnstickTime -= Time.deltaTime;
+                }
+                else
+                {
+                    wallUnstickTime = wallStickDuration;
+                }
+            }
+            // reset for the following update
+            else
+            {
+                wallUnstickTime = wallStickDuration;
+            }
+        }
+
+        // perform walljump, but only when already wallsliding
+        if (Input.GetKeyDown(KeyCode.Space) && wallSliding)
+        {
+            wallJumping = true;
+
+            // when jumping against the wall, go up
+            if (wallDir == input.x)
+            {
+                velocity.x = -wallDir * wallJumpClimb.x;
+                velocity.y = wallJumpClimb.y;
+            }
+
+            // when performing a static jump, go down
+            else if (input.x == 0f)
+            {
+                velocity.x = -wallDir * wallJumpOff.x;
+                velocity.y = wallJumpOff.y;
+            }
+
+            // otherwise, jump from the wall
+            else
+            {
+                velocity.x = -wallDir * wallJumpLeap.x;
+                velocity.y = wallJumpLeap.y;
             }
         }
     }
