@@ -23,9 +23,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2 wallJumpOff;
     [SerializeField] private Vector2 wallJumpLeap;
 
+    [Header("Dashing")]
+    [SerializeField] private bool enableDash;
+    [SerializeField] private float dashSpeed = 30f;
+    [SerializeField] private float dashDuration = 0.11f;
+    [SerializeField] private float dashCooldown = 1f;
+
     // Utility
     private Vector2 input;
-    private CharacterController2D characterController;
+    private CharacterController2D cc;
 
     // Movement
     private Vector3 velocity;
@@ -41,9 +47,15 @@ public class PlayerController : MonoBehaviour
     private bool wallSliding;
     private float wallUnstickTime;
 
+    // Dashing
+    private bool dashing;
+    private float nextDashTime;
+    private float dashStopTime;
+    private float dashDirection;
+
     void Start()
     {
-        characterController = GetComponent<CharacterController2D>();
+        cc = GetComponent<CharacterController2D>();
 
         // set gravity and jump velocity based on desired height and apex time
         gravity = -(2 * jumpHeight) / Mathf.Pow(jumpApexDelay, 2);
@@ -72,8 +84,14 @@ public class PlayerController : MonoBehaviour
             WallJump();
         }
 
+        // dashing
+        if (enableDash)
+        {
+            Dash();
+        }
+
         // reset vertical velocity on vertical collisions
-        if (characterController.CollisionState.below || characterController.CollisionState.above)
+        if (cc.CollisionState.below || cc.CollisionState.above)
         {
             velocity.y = 0;
         }
@@ -84,8 +102,14 @@ public class PlayerController : MonoBehaviour
         // apply gravity
         velocity.y += gravity * Time.deltaTime;
 
+        // dashing should override gravity and vertical movement
+        if (dashing)
+        {
+            velocity.y = 0f;
+        }
+
         // attempt to move
-        characterController.Move(velocity * Time.deltaTime, input.y == -1f);
+        cc.Move(velocity * Time.deltaTime, input.y == -1f);
     }
 
     private float GetAcceleration()
@@ -94,7 +118,7 @@ public class PlayerController : MonoBehaviour
         {
             return accelerationWallJump;
         }
-        else if (characterController.CollisionState.below)
+        else if (cc.CollisionState.below)
         {
             return accelerationGrounded;
         }
@@ -107,7 +131,7 @@ public class PlayerController : MonoBehaviour
     private void Jump()
     {
         // perform regular jump
-        if (Input.GetKey(KeyCode.Space) && characterController.CollisionState.below)
+        if (Input.GetKey(KeyCode.Space) && cc.CollisionState.below)
         {
             velocity.y = jumpVelocity;
         }
@@ -123,21 +147,19 @@ public class PlayerController : MonoBehaviour
 
     private void WallJump()
     {
-        int wallDir = (characterController.CollisionState.left) ? -1 : 1;
+        int wallDir = (cc.CollisionState.left) ? -1 : 1;
 
         // reset wallsliding status every update
         wallSliding = false;
 
         // reset walljumping status on any collision
-        if (characterController.CollisionState.IsColliding())
+        if (cc.CollisionState.IsColliding())
         {
             wallJumping = false;
         }
 
         // sliding down along an horizontal wall
-        if ((characterController.CollisionState.left || characterController.CollisionState.right) && 
-            !characterController.CollisionState.below && 
-            velocity.y < 0f)
+        if ((cc.CollisionState.left || cc.CollisionState.right) && !cc.CollisionState.below && velocity.y < 0f)
         {
             wallSliding = true;
 
@@ -194,6 +216,48 @@ public class PlayerController : MonoBehaviour
                 velocity.x = -wallDir * wallJumpLeap.x;
                 velocity.y = wallJumpLeap.y;
             }
+        }
+    }
+
+    private void Dash()
+    {
+        // reset dashing on horizontal collisions
+        if (dashing && (cc.CollisionState.right || cc.CollisionState.left))
+        {
+            dashing = false;
+            velocity.x = 0f;
+        }
+
+        // reset dashing after set duration
+        if (dashing && Time.time > dashStopTime)
+        {
+            dashing = false;
+            velocity.x = 0f;
+        }
+
+        // if dashing, maintain a constant velocity
+        if (dashing)
+        {
+            velocity.x = dashSpeed * dashDirection;
+        }
+
+        // perform dash
+        if (Input.GetKeyDown(KeyCode.K) && Time.time > nextDashTime && !wallSliding)
+        {
+            nextDashTime = Time.time + dashCooldown;
+            dashStopTime = Time.time + dashDuration;
+
+            if (input.x != 0f)
+            {
+                dashDirection = input.x;
+            }
+            else
+            {
+                dashDirection = cc.CollisionState.horizontalDir;
+            }
+
+            velocity.x = dashSpeed * dashDirection;
+            dashing = true;
         }
     }
 }
