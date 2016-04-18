@@ -32,6 +32,7 @@ public class PlayerController : MonoBehaviour
     // Utility
     private Vector2 input;
     private CharacterController2D cc;
+    private Vector3 spawnPos;
 
     // Movement
     private Vector3 velocity;
@@ -63,6 +64,9 @@ public class PlayerController : MonoBehaviour
 
         // likewise for minimum jump velocity
         minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
+
+        // save spawn position to reset if needed
+        spawnPos = transform.position;
     }
 
     void Update()
@@ -110,6 +114,12 @@ public class PlayerController : MonoBehaviour
 
         // attempt to move
         cc.Move(velocity * Time.deltaTime, input.y == -1f);
+
+        // just for the demo, reset position if the player falls
+        if (transform.position.y < -50f)
+        {
+            transform.position = spawnPos;
+        }
     }
 
     private float GetAcceleration()
