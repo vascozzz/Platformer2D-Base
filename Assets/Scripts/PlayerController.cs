@@ -10,6 +10,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float accelerationGrounded = 0f;
     [SerializeField] private float accelerationJump = 0f;
 
+    [Header("Variable Jump Height")]
+    [SerializeField] private bool enableVarJumpHeight;
+    [SerializeField] private float minJumpHeight = 2f;
+
     // Utility
     private Vector2 input;
     private CharacterController2D characterController;
@@ -17,8 +21,9 @@ public class PlayerController : MonoBehaviour
     // Movement
     private Vector3 velocity;
     private float gravity;
-    private float jumpVelocity;
     private float horizontalSmoothing;
+    private float jumpVelocity;
+    private float minJumpVelocity;
 
     void Start()
     {
@@ -27,6 +32,9 @@ public class PlayerController : MonoBehaviour
         // set gravity and jump velocity based on desired height and apex time
         gravity = -(2 * jumpHeight) / Mathf.Pow(jumpApexDelay, 2);
         jumpVelocity = Mathf.Abs(gravity * jumpApexDelay);
+
+        // likewise for minimum jump velocity
+        minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
     }
 
     void Update()
@@ -49,10 +57,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // jumping
-        if (Input.GetKey(KeyCode.Space) && characterController.CollisionState.below)
-        {
-            velocity.y = jumpVelocity;
-        }
+        Jump();
 
         // apply gravity
         velocity.y += gravity * Time.deltaTime;
@@ -70,6 +75,23 @@ public class PlayerController : MonoBehaviour
         else
         {
             return accelerationJump;
+        }
+    }
+
+    private void Jump()
+    {
+        // perform regular jump
+        if (Input.GetKey(KeyCode.Space) && characterController.CollisionState.below)
+        {
+            velocity.y = jumpVelocity;
+        }
+        // if variable jump height is enabled, clamp vertical velocity
+        if (enableVarJumpHeight && Input.GetKeyUp(KeyCode.Space))
+        {
+            if (velocity.y > minJumpVelocity)
+            {
+                velocity.y = minJumpVelocity;
+            }
         }
     }
 }
