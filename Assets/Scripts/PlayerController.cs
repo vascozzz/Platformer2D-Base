@@ -4,19 +4,19 @@ using System.Collections;
 public class PlayerController : MonoBehaviour
 {
     [Header("Basic Movement")]
-    [SerializeField] private float moveSpeed = 6f;
-    [SerializeField] private float jumpHeight = 4f;
+    [SerializeField, Range(1f, 20f)] private float moveSpeed = 6f;
+    [SerializeField, Range(0f, 20f)] private float jumpHeight = 4f;
     [SerializeField] private float jumpApexDelay = 0.4f;
     [SerializeField] private float accelerationGrounded = 0f;
     [SerializeField] private float accelerationJump = 0f;
 
     [Header("Variable Jump Height")]
     [SerializeField] private bool enableVarJumpHeight;
-    [SerializeField] private float minJumpHeight = 2f;
+    [SerializeField, Range(0f, 20f)] private float minJumpHeight = 2f;
 
     [Header("Wall Jumping")]
     [SerializeField] private bool enableWallJump;
-    [SerializeField] private float wallSlideSpeed = 3f;
+    [SerializeField, Range(1f, 20f)] private float wallSlideSpeed = 3f;
     [SerializeField] private float wallStickDuration = 0.25f;
     [SerializeField] private float accelerationWallJump = 0.2f;
     [SerializeField] private Vector2 wallJumpClimb;
@@ -25,7 +25,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Dashing")]
     [SerializeField] private bool enableDash;
-    [SerializeField] private float dashSpeed = 30f;
+    [SerializeField, Range(1f, 60f)] private float dashSpeed = 30f;
     [SerializeField] private float dashDuration = 0.11f;
     [SerializeField] private float dashCooldown = 1f;
 
