@@ -46,10 +46,13 @@ public class CharacterController2D : MonoBehaviour
         }
     }
 
-    [SerializeField]
+    [SerializeField, Range(0.001f, 0.3f)]
+    private float skinWidth = 0.015f;
+
+    [SerializeField, Range(2, 30)]
     private int horizontalRayCount = 4;
 
-    [SerializeField]
+    [SerializeField, Range(2, 30)]
     private int verticalRayCount = 4;
 
     [SerializeField]
@@ -58,14 +61,11 @@ public class CharacterController2D : MonoBehaviour
     [SerializeField]
     private LayerMask oneWayPlatformsMask;
 
-    [SerializeField]
+    [SerializeField, Range(0f, 90f)]
     private float maxAscentAngle = 65f;
 
-    [SerializeField]
+    [SerializeField, Range(0f, 90f)]
     private float maxDescentAngle = 65f;
-
-    [SerializeField]
-    private float skinWidth = 0.015f;
 
     private float horizontalRaySpacing;
     private float verticalRaySpacing;
@@ -197,7 +197,7 @@ public class CharacterController2D : MonoBehaviour
             rayLength = 2 * skinWidth;
         }
 
-        // fire raycasts, and adjust velocity whenever an object is hit
+        // fire raycasts and adjust velocity whenever an object is hit
         for (int i = 0; i < horizontalRayCount; i++)
         {
             Vector2 rayPos = rayOrigin + Vector2.up * (horizontalRaySpacing * i);
@@ -244,7 +244,7 @@ public class CharacterController2D : MonoBehaviour
         float rayLength = Mathf.Abs(velocity.y) + skinWidth;
         Vector2 rayOrigin = (rayDir == -1) ? raycastOrigins.bottomLeft : raycastOrigins.topLeft;
 
-        // fire raycasts, and adjust velocity whenever an object is hit
+        // fire raycasts and adjust velocity whenever an object is hit
         for (int i = 0; i < verticalRayCount; i++)
         {
             Vector2 rayPos = rayOrigin + Vector2.right * (verticalRaySpacing * i + velocity.x);
@@ -260,7 +260,7 @@ public class CharacterController2D : MonoBehaviour
                     continue;
                 }
 
-                // reset falling through state if the obstacle should not be ignored
+                // reset falling-through state if the obstacle should not be ignored
                 collisionState.throughPlatform = hit.collider;
                 collisionState.fallingThroughPlatform = false;
 
@@ -309,7 +309,7 @@ public class CharacterController2D : MonoBehaviour
     private void AscendSlope(ref Vector3 velocity, float dir, float surfaceAngle, float surfaceDistance)
     {
         // if descending a slope and meeting an ascending one in the direction we're going,
-        // update state and reset velocity (as descending slopes are checked and velocity is adjusted
+        // update state and reset velocity (as descending slopes are checked for and velocity is adjusted
         // in a previous step)
         if (collisionState.descendingSlope)
         {
@@ -355,6 +355,7 @@ public class CharacterController2D : MonoBehaviour
         Vector2 rayOrigin = (rayDir == -1 ? raycastOrigins.bottomRight : raycastOrigins.bottomLeft);
         RaycastHit2D hit = Physics2D.Raycast(rayOrigin, -Vector2.up, Mathf.Infinity, collisionMask);
 
+        // fire a single ray, vertically, from the corner associated with the current horizontal velocity
         if (hit)
         {
             float surfaceAngle = Vector2.Angle(hit.normal, Vector2.up);
