@@ -69,6 +69,7 @@ public class CharacterController2D : MonoBehaviour
 
     private float horizontalRaySpacing;
     private float verticalRaySpacing;
+    private Color rayColor = Color.yellow;
 
     private BoxCollider2D boxCollider;
     private CharacterRaycastOrigins raycastOrigins;
@@ -203,7 +204,7 @@ public class CharacterController2D : MonoBehaviour
             Vector2 rayPos = rayOrigin + Vector2.up * (horizontalRaySpacing * i);
             RaycastHit2D hit = Physics2D.Raycast(rayPos, Vector2.right * rayDir, rayLength, collisionMask);
 
-            Debug.DrawRay(rayPos, Vector2.right * rayDir * rayLength, Color.red);
+            Debug.DrawRay(rayPos, Vector2.right * rayDir * rayLength, rayColor);
 
             if (hit)
             {
@@ -250,7 +251,7 @@ public class CharacterController2D : MonoBehaviour
             Vector2 rayPos = rayOrigin + Vector2.right * (verticalRaySpacing * i + velocity.x);
             RaycastHit2D hit = Physics2D.Raycast(rayPos, Vector2.up * rayDir, rayLength, verticalCollisionMask);
 
-            Debug.DrawRay(rayPos, Vector2.up * rayDir * rayLength, Color.red);
+            Debug.DrawRay(rayPos, Vector2.up * rayDir * rayLength, rayColor);
 
             if (hit)
             {
